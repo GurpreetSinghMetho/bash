@@ -1,0 +1,35 @@
+{
+  "project_info": {
+    "project_number": "665452206119",
+    "firebase_url": "https://endless-ripple-232106.firebaseio.com",
+    "project_id": "endless-ripple-232106",
+    "storage_bucket": "endless-ripple-232106.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665452206119:android:96ae74083f4be924",
+        "android_client_info": {
+          "package_name": "com.orem.bashhub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZfRDhF1zwLRI-SqV3yR6cUKvQNWqh4U0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "665452206119-h479mfur9jnaqlqlq1amqkb2scg8lgob.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="data"
+            type="com.orem.bashhub.data.HostHubDetailPOJO.Age_details" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/pbMale"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="@dimen/_18sdp"
+                android:layout_height="@dimen/_130sdp"
+                android:progressDrawable="@drawable/custom_progress_sky_blue" />
+
+            <ProgressBar
+                android:id="@+id/pbFemale"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="@dimen/_18sdp"
+                android:layout_height="@dimen/_130sdp"
+                android:progressDrawable="@drawable/custom_progress_purple" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="@dimen/_42sdp"
+            android:layout_height="@dimen/_1sdp"
+            android:background="@color/black" />
+
+        <LinearLayout
+            android:layout_width="@dimen/_35sdp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvMale"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@{data.male}"
+                android:textColor="@color/skyblue"
+                android:textSize="@dimen/_9sdp" />
+
+            <TextView
+                android:id="@+id/tvFemale"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@{data.fe_male}"
+                android:textColor="@color/purple_new"
+                android:textSize="@dimen/_9sdp" />
+
+            <View
+                android:id="@+id/view"
+                android:layout_width="@dimen/_1sdp"
+                android:layout_height="@dimen/_9sdp"
+                android:background="@color/light_gray" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{data.age}"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_10sdp" />
+    </LinearLayout>
+</layout>

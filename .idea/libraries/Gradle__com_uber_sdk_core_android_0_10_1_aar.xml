@@ -1,0 +1,18 @@
+<component name="libraryTable">
+  <library name="Gradle: com.uber.sdk:core-android:0.10.1@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/c43b90cc0e74cecb308ea75eb1eb6315/jetified-core-android-0.10.1/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/c43b90cc0e74cecb308ea75eb1eb6315/jetified-core-android-0.10.1/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/c43b90cc0e74cecb308ea75eb1eb6315/jetified-core-android-0.10.1/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6c72cbea971241704824156c2290de38/jetified-core-android-0.10.1/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6c72cbea971241704824156c2290de38/jetified-core-android-0.10.1/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/6c72cbea971241704824156c2290de38/jetified-core-android-0.10.1/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.uber.sdk/core-android/0.10.1/519a93e2ad94d806e4f91da99f865ca62f42ce1a/core-android-0.10.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.uber.sdk/core-android/0.10.1/c29d3d53266de83165199038b3af605f5ea0933/core-android-0.10.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

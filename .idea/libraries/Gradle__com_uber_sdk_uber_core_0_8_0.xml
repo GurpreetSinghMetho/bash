@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: com.uber.sdk:uber-core:0.8.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.uber.sdk/uber-core/0.8.0/6fb5788cfdf741f9cdab4decab048dd481b50d22/uber-core-0.8.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.uber.sdk/uber-core/0.8.0/3858d9560f0e7e06fbd7d799621e6fbf5dd4c083/uber-core-0.8.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.uber.sdk/uber-core/0.8.0/a291a4292351097a0fbd6127abaa1fcb262066ae/uber-core-0.8.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

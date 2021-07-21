@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="data"
+            type="com.orem.bashhub.data.BashDetailsPOJO.QrTicket" />
+    </data>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        tools:ignore="UseCompoundDrawables">
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:maxLines="3"
+            android:text="@{data.orderItem.get(0).getName(data.itemId,data.orderItem)}"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_16sdp"
+            android:visibility="visible" />
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:gravity="center"
+            android:maxLines="3"
+            android:text="@{data.orderItem.get(0).getDescription(data.itemId,data.orderItem)}"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_16sdp"
+            android:visibility="visible" />
+
+
+
+        <ImageView
+            android:layout_width="@dimen/_160sdp"
+            android:layout_height="@dimen/_160sdp"
+            android:layout_marginTop="@dimen/_15sdp"
+            android:contentDescription="@string/app_name"
+            android:loadQrCode="@{data.code}" />
+
+        <TextView
+            android:id="@+id/tvCode"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_30sdp"
+            android:gravity="bottom"
+            android:text="@{data.getTicketCode(context)}"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_18sdp" />
+
+    </LinearLayout>
+</layout>

@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Gradle: com.snapchat.kit.sdk:bitmoji:1.2.0@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/05ad3ac39de817c0422c49870f1c7f5c/jetified-bitmoji-1.2.0/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/05ad3ac39de817c0422c49870f1c7f5c/jetified-bitmoji-1.2.0/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/05ad3ac39de817c0422c49870f1c7f5c/jetified-bitmoji-1.2.0/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/5af9a8231c4ecd9c7e729d8fb4d89627/jetified-bitmoji-1.2.0/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/5af9a8231c4ecd9c7e729d8fb4d89627/jetified-bitmoji-1.2.0/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/5af9a8231c4ecd9c7e729d8fb4d89627/jetified-bitmoji-1.2.0/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,628 @@
+package com.orem.bashhub.fragment;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.Toast;
+
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.gson.Gson;
+import com.orem.bashhub.R;
+import com.orem.bashhub.activity.MainActivity;
+import com.orem.bashhub.adapter.AddInstagramImagesAdapter;
+import com.orem.bashhub.adapter.CustomSpinnerAdapter;
+import com.orem.bashhub.data.BashDetailsPOJO;
+import com.orem.bashhub.data.SpotifyListPOJO;
+import com.orem.bashhub.data.UserPOJO;
+import com.orem.bashhub.data.UsersListPOJO;
+import com.orem.bashhub.databinding.FragmentCreateBashBinding;
+import com.orem.bashhub.interfaces.OnAddHost;
+import com.orem.bashhub.interfaces.OnBgApi;
+import com.orem.bashhub.utils.Const;
+import com.orem.bashhub.utils.Utils;
+import com.orem.bashhub.utils.apiinterface.Events;
+import com.spotify.sdk.android.authentication.AuthenticationClient;
+import com.spotify.sdk.android.authentication.AuthenticationRequest;
+import com.spotify.sdk.android.authentication.AuthenticationResponse;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import static android.app.Activity.RESULT_OK;
+import static com.facebook.FacebookSdk.getApplicationContext;
+
+public class CreateBashFragment extends BaseFragment {
+
+    public static final String CLIENT_ID = "19db39b9dcf8400ba1ca2c875c9802e1";
+    public static final String REDIRECT_URL = "http://3.15.223.201/bash_demo/callbacks/";
+    public static final int AUTH_TOKEN_REQUEST_CODE = 0x10;
+    private final OkHttpClient mOkHttpClient = new OkHttpClient();
+    String[] spinnerTitles;
+    int[] spinnerImages;
+    Activity activity;
+    private FragmentCreateBashBinding binding;
+    private String EVENT_MODE = Const.ZERO, EVENT_REPEAT = Const.ZERO, EVENT_TYPE = Const.EVENT_RESTAURANT;
+    private CallbackManager callbackManager;
+    private Place selectedPlace = null;
+    private String startDate = "", endDate = "", repeatEndDate = "", category = "";
+    private List<UsersListPOJO.Data> selectedUser = new ArrayList<>();
+    private String hostID = "", bash_id = "";
+    private BashDetailsPOJO bashData = null;
+    private OnBgApi bgListener = null;
+    private boolean isDelete = false;
+    private List<String> list = new ArrayList<>();
+    private OnAddHost listener = this::setHost;
+    private AddInstagramImagesAdapter adapter;
+    private String mAccessToken;
+    private String mAccessCode;
+    private Call mCall;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_create_bash, container, false);
+        Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
+        callbackManager = CallbackManager.Factory.create();
+        init();
+        if (bashData != null)
+            setBashData();
+        return binding.getRoot();
+    }
+
+    private void init() {
+        activity = getActivity();
+
+        spinnerTitles = new String[]{mContext.getString(R.string.bash_category), mContext.getString(R.string.pool_party), mContext.getString(R.string.queer_friendly), mContext.getString(R.string.desi_party), mContext.getString(R.string.gone_country), mContext.getString(R.string.karaoke_time)};
+        spinnerImages = new int[]{R.drawable.bikini
+                , R.drawable.bikini
+                , R.drawable.gay
+                , R.drawable.flag
+                , R.drawable.cowboy
+                , R.drawable.mic};
+        CustomSpinnerAdapter mCustomAdapter = new CustomSpinnerAdapter(mContext, spinnerTitles, spinnerImages);
+        binding.spBashCategory.setAdapter(mCustomAdapter);
+        binding.spBashCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                category = spinnerTitles[position].toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        Utils.underlineTextView(binding.tvDelete);
+        binding.backIV.setOnClickListener(this);
+        binding.btWebEvent.setOnClickListener(this);
+        binding.ivSwitch.setOnClickListener(this);
+        binding.ivRepeatSwitch.setOnClickListener(this);
+        binding.ivRestaurant.setOnClickListener(this);
+        binding.ivClub.setOnClickListener(this);
+        binding.ivBar.setOnClickListener(this);
+        binding.tvStartDate.setOnClickListener(this);
+        binding.tvEndDate.setOnClickListener(this);
+        binding.tvStartTime.setOnClickListener(this);
+        binding.tvEndTime.setOnClickListener(this);
+        binding.tvLocation.setOnClickListener(this);
+        binding.llShare.setOnClickListener(this);
+        binding.tvRepeatEndDate.setOnClickListener(this);
+        binding.llInvite.setOnClickListener(this);
+        binding.btCreate.setOnClickListener(this);
+        binding.ivAdd.setOnClickListener(this);
+        binding.tvFbEvents.setOnClickListener(this);
+        binding.tvDelete.setOnClickListener(this);
+        binding.mSpotyfy.setOnClickListener(this);
+
+        UsersListPOJO.Data item = new UsersListPOJO.Data();
+        item.setId(Const.getLoggedInUser(mContext).id);
+        item.setUsername(Const.getLoggedInUser(mContext).username);
+        selectedUser.add(item);
+        setHost(new ArrayList<>(selectedUser));
+
+        binding.etEventInfo.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                binding.tvCount.setText(s.toString().isEmpty() ? getString(R.string._140_character) : (140 - s.length()) + " " + getString(R.string.character));
+            }
+        });
+    }
+
+    public void setData(BashDetailsPOJO bashData, OnBgApi bgListener) {
+        this.bashData = bashData;
+        this.bgListener = bgListener;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.backIV:
+                Objects.requireNonNull(getActivity()).onBackPressed();
+                break;
+            case R.id.ivSwitch:
+                EVENT_MODE = EVENT_MODE.equals(Const.ZERO) ? Const.ONE : Const.ZERO;
+                binding.ivSwitch.setImageResource(EVENT_MODE.equals(Const.ZERO) ? R.drawable.ic_switch_unselected : R.drawable.ic_switch_selected);
+                break;
+            case R.id.ivRepeatSwitch:
+                EVENT_REPEAT = EVENT_REPEAT.equals(Const.ZERO) ? Const.ONE : Const.ZERO;
+                binding.ivRepeatSwitch.setImageResource(EVENT_REPEAT.equals(Const.ZERO) ? R.drawable.ic_switch_unselected : R.drawable.ic_switch_selected);
+                binding.repeatDateLayout.setVisibility(EVENT_REPEAT.equals(Const.ZERO) ? View.GONE : View.VISIBLE);
+                if (EVENT_REPEAT.equalsIgnoreCase(Const.ONE)) {
+                    repeatEndDate = Utils.addSevenDay(startDate);
+                    binding.tvRepeatEndDate.setText(Utils.changeDateFormat(Utils.addSevenDay(startDate)));
+                    binding.tvEndDate.setText(Utils.changeDateFormat(startDate));
+                    endDate = startDate;
+                }
+                break;
+            case R.id.ivRestaurant:
+                selectEventType(true, false, false);
+                break;
+            case R.id.ivClub:
+                selectEventType(false, true, false);
+                break;
+            case R.id.ivBar:
+                selectEventType(false, false, true);
+                break;
+            case R.id.tvStartDate:
+                Utils.showDatePickerDialog(mContext, startDate, date -> {
+                    startDate = date;
+                    binding.tvStartDate.setText(Utils.changeDateFormat(startDate));
+                    binding.tvStartTime.setText("");
+                    if (EVENT_REPEAT.equalsIgnoreCase(Const.ONE)) {
+                        binding.tvEndDate.setText(Utils.changeDateFormat(startDate));
+                        endDate = date;
+                    } else {
+                        binding.tvEndDate.setText(Utils.changeDateFormat(Utils.addOneDay(startDate)));
+                        endDate = Utils.addOneDay(startDate);
+                    }
+                });
+                break;
+            case R.id.tvEndDate:
+                if (startDate.isEmpty()) {
+                    Utils.showToast(mContext, getString(R.string.select_event_start_date));
+                } else {
+                    if (EVENT_REPEAT.equalsIgnoreCase(Const.ONE)) {
+                        Utils.showToast(mContext, mContext.getString(R.string.repeat_event_canbot_greater));
+                    } else {
+                        Utils.showDatePickerDialog(mContext, endDate, date -> {
+                            if (Utils.isValidEndDate(startDate, date)) {
+                                endDate = date;
+                                binding.tvEndDate.setText(Utils.changeDateFormat(endDate));
+                                binding.tvEndTime.setText("");
+                            } else {
+                                Utils.showToast(mContext, getString(R.string.end_date_msg));
+                            }
+                        });
+                    }
+                }
+                break;
+            case R.id.tvRepeatEndDate:
+                if (startDate.isEmpty()) {
+                    Utils.showToast(mContext, getString(R.string.select_event_start_date));
+                } else {
+                    Utils.showRepeatDatePickerDialog(mContext, startDate, date -> {
+                        if (Utils.isValidEndDate(startDate, date)) {
+                            repeatEndDate = date;
+                            binding.tvRepeatEndDate.setText(Utils.changeDateFormat(repeatEndDate));
+                            binding.tvEndDate.setText(Utils.changeDateFormat(startDate));
+                        } else {
+                            Utils.showToast(mContext, getString(R.string.end_date_msg));
+                        }
+                    });
+                }
+                break;
+            case R.id.tvStartTime:
+                if (startDate.isEmpty())
+                    Utils.showToast(mContext, getString(R.string.select_event_start_date));
+                else
+                    Utils.showTimePickerDialog(mContext, startDate, binding.tvStartTime.getText().toString(), time -> {
+                        binding.tvStartTime.setText(time);
+                        binding.tvEndTime.setText("");
+                    });
+                break;
+            case R.id.tvEndTime:
+                if (endDate.isEmpty())
+                    Utils.showToast(mContext, getString(R.string.select_event_end_date));
+                else if (binding.tvStartTime.getText().toString().isEmpty())
+                    Utils.showToast(mContext, getString(R.string.select_start_time));
+                else
+                    Utils.showTimePickerDialog(mContext, endDate, binding.tvEndTime.getText().toString(), time -> {
+                        if (!Utils.isCorrectTime(startDate + " " + binding.tvStartTime.getText().toString(), endDate + " " + time))
+                            Utils.showToast(mContext, getString(R.string.invalid_end_time));
+                        else binding.tvEndTime.setText(time);
+                    });
+                break;
+            case R.id.tvLocation:
+                locationIntent();
+                break;
+            case R.id.llShare:
+                fbShare();
+                break;
+            case R.id.llInvite:
+                InviteFriendsFragment fragment1 = new InviteFriendsFragment();
+                fragment1.setData(getInvitationContent(), bash_id);
+                Utils.goToFragment(mContext, fragment1, R.id.fragment_container);
+                break;
+            case R.id.btCreate:
+                if (checkValidation()) apiCreateEvent();
+                break;
+            case R.id.btWebEvent:
+                Toast.makeText(activity, "fgdf", Toast.LENGTH_SHORT).show();
+                String url = "https://www.bashbusiness.com/?user_id=" + Const.getLoggedInUserID(mContext) + "&is_app=1&redirect_uri=https://www.bashbusiness.com/event/add";
+                Utils.intentToBrowser(mContext, url);
+                break;
+            case R.id.mSpotyfy:
+                onRequestTokenClicked();
+                break;
+            case R.id.ivAdd:
+                AddHostFragment fragment2 = new AddHostFragment();
+                fragment2.setData(selectedUser, listener);
+                Utils.goToFragment(mContext, fragment2, R.id.fragment_container);
+                break;
+            case R.id.tvFbEvents:
+                Utils.goToFragment(mContext, new FbEventsFragment(), R.id.fragment_container);
+                break;
+            case R.id.tvDelete:
+                Const.showCustomMessageDialog(mContext, getString(R.string.delete_event), getString(bashData.isCountDropVisible() ? R.string.want_to_delete_event : R.string.want_to_delete_event_free),
+                        getString(R.string._yes), getString(R.string._no), v1 -> apiDeleteEvent(), null);
+                break;
+        }
+    }
+
+    private void setBashData() {
+        binding.mainRepeatLayout.setVisibility(View.GONE);
+        bash_id = bashData.id;
+        EVENT_MODE = bashData.is_private;
+        EVENT_TYPE = bashData.bash_type;
+        startDate = bashData.start_date;
+        endDate = bashData.end_date;
+        binding.tvTitle.setText(getString(R.string.edit_your));
+        selectEventType(bashData.bash_type.equals(Const.EVENT_RESTAURANT), bashData.bash_type.equals(Const.EVENT_CLUB), bashData.bash_type.equals(Const.EVENT_BAR));
+        binding.ivSwitch.setImageResource(EVENT_MODE.equals(Const.ZERO) ? R.drawable.ic_switch_unselected : R.drawable.ic_switch_selected);
+        category = bashData.category;
+        if (category.equalsIgnoreCase("")) {
+            binding.spBashCategory.setSelection(0);
+        } else {
+            int pos = category.equals(Const.POOL_PARTY) ? 1 : category.equals(Const.QUEER_FRIENDLY) ? 2 : category.equals(Const.DESI_PARTY) ? 3 : category.equals(Const.GONE_COUNTRY) ? 4 : 5;
+            binding.spBashCategory.setSelection(pos);
+        }
+
+        binding.etEventName.setText(bashData.name);
+        binding.etEventInfo.setText(bashData.description);
+        binding.tvStartDate.setText(bashData.start_date);
+        binding.tvEndDate.setText(bashData.end_date);
+        binding.tvStartTime.setText(Utils.changeTimeFormat2(bashData.start_time));
+        binding.tvEndTime.setText(Utils.changeTimeFormat2(bashData.end_time));
+        binding.tvLocation.setText(bashData.location);
+        binding.etCharge.setText(bashData.charge);
+        binding.etCharge.setEnabled(false);
+        binding.etStartAge.setText(bashData.age);
+        binding.etEndAge.setText(bashData.age_max);
+        binding.btCreate.setText(getString(R.string.save));
+        selectedUser.clear();
+        for (BashDetailsPOJO.Hosts user : bashData.hosts) {
+            UsersListPOJO.Data item = new UsersListPOJO.Data();
+            item.setId(user.id);
+            item.setUsername(user.username);
+            selectedUser.add(item);
+        }
+        setHost(new ArrayList<>(selectedUser));
+        binding.llOR.setVisibility(View.GONE);
+        binding.tvFbEvents.setVisibility(View.GONE);
+        binding.llShareOuter.setVisibility(View.VISIBLE);
+        binding.tvDelete.setVisibility(bashData.delete.equals(Const.ONE) ? View.VISIBLE : View.GONE);
+    }
+
+    private void setHost(List<UsersListPOJO.Data> list) {
+        hostID = "";
+        String host = "";
+        selectedUser.clear();
+        selectedUser.addAll(list);
+        for (UsersListPOJO.Data item : selectedUser) {
+            host = host.isEmpty() ? item.username : host + "," + item.username;
+            hostID = hostID.isEmpty() ? item.id : hostID + "," + item.id;
+        }
+        binding.etEventHost.setText(host);
+    }
+
+    private void selectEventType(boolean isRes, boolean isClub, boolean isBar) {
+        binding.ivRestaurant.setImageResource(isRes ? R.drawable.ic_restaurant_dark : R.drawable.ic_restaurant_unselected);
+        binding.ivClub.setImageResource(isClub ? R.drawable.ic_club_dark : R.drawable.ic_club_unselected);
+        binding.ivBar.setImageResource(isBar ? R.drawable.ic_bar_dark : R.drawable.ic_bar_unselected);
+        EVENT_TYPE = isRes ? Const.EVENT_RESTAURANT : (isClub ? Const.EVENT_CLUB : Const.EVENT_BAR);
+    }
+
+    private void fbShare() {
+        ShareDialog shareDialog = new ShareDialog(this);
+        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+            @Override
+            public void onSuccess(Sharer.Result result) {
+                Utils.showToast(mContext, getString(R.string.bash_share_success));
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+        String data = getString(R.string.fb_share_text, binding.etEventName.getText().toString(),
+                binding.tvStartDate.getText().toString() + " " + binding.tvStartTime.getText().toString() + " - " +
+                        binding.tvEndDate.getText().toString() + " " + binding.tvEndTime.getText().toString(),
+                binding.tvLocation.getText().toString());
+        ShareLinkContent content = new ShareLinkContent.Builder()
+                .setContentUrl(Uri.parse(Const.APP_WEB_LINK))
+                .setQuote(data)
+                .build();
+        ShareDialog.show(this, content);
+    }
+
+    private void locationIntent() {
+        List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG);
+        Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields).build(mContext);
+        startActivityForResult(intent, 100);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100) {
+            if (resultCode == RESULT_OK) {
+                Place place = Autocomplete.getPlaceFromIntent(data);
+                selectedPlace = place;
+                binding.tvLocation.setText(place.getName() != null && !place.getAddress().contains(place.getName()) ?
+                        place.getName() + ", " + place.getAddress() : place.getAddress());
+            }
+        } else if (AUTH_TOKEN_REQUEST_CODE == requestCode) {
+
+            final AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, data);
+            mAccessToken = response.getAccessToken();
+            onGetUserProfileClicked();
+        }
+    }
+
+    private boolean checkValidation() {
+        if (binding.etEventName.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.enter_event_name));
+            return false;
+        } else if (binding.etEventHost.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.enter_host_name));
+            return false;
+        } else if (binding.tvStartDate.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.select_event_start_date));
+            return false;
+        } else if (binding.tvEndDate.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.select_event_end_date));
+            return false;
+        } else if (binding.tvStartTime.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.select_start_time));
+            return false;
+        } else if (binding.tvEndTime.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.select_end_time));
+            return false;
+        } else if (binding.tvLocation.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.pick_event_location));
+            return false;
+        } /*else if (binding.etCharge.getText().toString().isEmpty()) {
+            Utils.showToast(mContext, getString(R.string.enter_cover_charge));
+            return false;
+        }*/ else if (binding.etStartAge.getText().toString().isEmpty() || Integer.parseInt(binding.etStartAge.getText().toString()) < 15) {
+            Utils.showToast(mContext, getString(R.string.min_age_limit_msg));
+            return false;
+        } else if (!binding.etEndAge.getText().toString().isEmpty() && Integer.parseInt(binding.etEndAge.getText().toString()) <
+                Integer.parseInt(binding.etStartAge.getText().toString())) {
+            Utils.showToast(mContext, getString(R.string.max_age_limit_msg));
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private void disableAllViews() {
+        binding.spBashCategory.setEnabled(false);
+        binding.ivRepeatSwitch.setEnabled(false);
+        binding.tvRepeatEndDate.setEnabled(false);
+        binding.ivRestaurant.setEnabled(false);
+        binding.ivClub.setEnabled(false);
+        binding.ivBar.setEnabled(false);
+        binding.ivSwitch.setEnabled(false);
+        binding.etEventName.setEnabled(false);
+        binding.etEventInfo.setEnabled(false);
+        binding.etEventHost.setEnabled(false);
+        binding.tvStartDate.setEnabled(false);
+        binding.tvEndDate.setEnabled(false);
+        binding.tvStartTime.setEnabled(false);
+        binding.tvEndTime.setEnabled(false);
+        binding.tvLocation.setEnabled(false);
+        binding.etCharge.setEnabled(false);
+        binding.etStartAge.setEnabled(false);
+        binding.etEndAge.setEnabled(false);
+        binding.ivAdd.setEnabled(false);
+    }
+
+    private String getInvitationContent() {
+        return getString(R.string.invite_share_text,
+                Const.getLoggedInUser(mContext).getFullName(),
+                binding.etEventName.getText().toString(),
+                binding.tvStartDate.getText().toString() + " " + binding.tvStartTime.getText().toString() + " - " +
+                        binding.tvEndDate.getText().toString() + " " + binding.tvEndTime.getText().toString(),
+                binding.tvLocation.getText().toString(),
+                Const.getInviteLink(mContext, bash_id));
+    }
+
+    private void apiCreateEvent() {
+        isDelete = false;
+        registerEventBus();
+        EventBus.getDefault().post(new Events.RequestBasic(mContext, Const.apiCreateBash(mContext, "", "", "", category, repeatEndDate, EVENT_TYPE,
+                binding.etEventName.getText().toString(), hostID,
+                startDate, endDate, Utils.changeTimeFormat1(binding.tvStartTime.getText().toString()),
+                Utils.changeTimeFormat1(binding.tvEndTime.getText().toString()),
+                binding.tvLocation.getText().toString(),
+                selectedPlace != null ? "" + Objects.requireNonNull(selectedPlace.getLatLng()).latitude : bashData.lat,
+                selectedPlace != null ? "" + selectedPlace.getLatLng().longitude : bashData.lng,
+                binding.etCharge.getText().toString(), binding.etStartAge.getText().toString(),
+                binding.etEndAge.getText().toString(), EVENT_MODE, binding.etEventInfo.getText().toString(), bash_id,"1"), true, false));
+    }
+
+    private void apiDeleteEvent() {
+        isDelete = true;
+        registerEventBus();
+        EventBus.getDefault().post(new Events.RequestBasic(mContext, Const.apiDeleteEvent(mContext, bash_id), true, false));
+    }
+
+    @Subscribe
+    public void apiCreateEventRes(Events.GetBasicData res) {
+        unRegisterEventBus();
+        if (isDelete) {
+            Utils.showMessageDialog(mContext, "", getString(R.string.event_delete_success), (dialog, which) -> binding.backIV.performClick());
+        } else {
+            bash_id = res.getData().data.id;
+            UserPOJO.Data user = Const.getLoggedInUser(mContext);
+            user.setToday_bash_count(res.getData().data.count);
+            Const.setLoggedInUser(mContext, user);
+            mLiveModel.getUserLiveData().setValue(user);
+            Utils.showToast(mContext, bashData != null ? getString(R.string.event_update_success) : getString(R.string.event_create_success));
+            disableAllViews();
+            if (EVENT_TYPE.equals(Const.EVENT_RESTAURANT)) {
+                binding.ivClub.setVisibility(View.GONE);
+                binding.ivBar.setVisibility(View.GONE);
+            }
+            if (EVENT_TYPE.equals(Const.EVENT_BAR)) {
+                binding.ivRestaurant.setVisibility(View.GONE);
+                binding.ivClub.setVisibility(View.GONE);
+            }
+            if (EVENT_TYPE.equals(Const.EVENT_CLUB)) {
+                binding.ivRestaurant.setVisibility(View.GONE);
+                binding.ivBar.setVisibility(View.GONE);
+            }
+            binding.ivAdd.setVisibility(View.GONE);
+            binding.ivSwitch.setVisibility(View.GONE);
+            binding.tvChoose.setVisibility(View.GONE);
+            binding.btCreate.setVisibility(View.GONE);
+            binding.llOR.setVisibility(View.GONE);
+            binding.tvFbEvents.setVisibility(View.GONE);
+            binding.llShareOuter.setVisibility(View.VISIBLE);
+        }
+        if (bgListener != null) bgListener.onBgApi();
+        ((MainActivity) mContext).apiGetBash(false);
+        ((MainActivity) mContext).getFbImage();
+    }
+
+    public void onGetUserProfileClicked() {
+        if (mAccessToken == null) {
+            Toast.makeText(mContext, "Unable to get user playlist.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final Request request = new Request.Builder()
+                .url("https://api.spotify.com/v1/users/vswdoruf6bqpujtcc9irmu0dt/playlists")
+                .addHeader("Authorization", "Bearer " + mAccessToken)
+                .build();
+
+        cancelCall();
+        mCall = mOkHttpClient.newCall(request);
+
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Toast.makeText(mContext, "Unable to get user playlist.", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    final JSONObject jsonObject = new JSONObject(response.body().string());
+                    String ss = jsonObject.toString(3);
+                    SpotifyListPOJO pojo = new Gson().fromJson(ss, SpotifyListPOJO.class);
+                    if (pojo.getItems().size() > 0) {
+                        Log.e("playlist", pojo.getItems().get(0).getName().toString());
+
+                    } else {
+                        Toast.makeText(mContext, "You don't have any playlist on your spotify account.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    Toast.makeText(mContext, "Unable to get user playlist.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    public void onRequestTokenClicked() {
+        final AuthenticationRequest request = getAuthenticationRequest(AuthenticationResponse.Type.TOKEN);
+        AuthenticationClient.openLoginActivity(activity, AUTH_TOKEN_REQUEST_CODE, request);
+    }
+
+    private AuthenticationRequest getAuthenticationRequest(AuthenticationResponse.Type type) {
+        return new AuthenticationRequest.Builder(CLIENT_ID, type, REDIRECT_URL)
+                .setShowDialog(false)
+                .setScopes(new String[]{"user-read-email"})
+                /* .setCampaign("your-campaign-token")*/
+                .build();
+    }
+
+    private void cancelCall() {
+        if (mCall != null) {
+            mCall.cancel();
+        }
+    }
+
+    private Uri getRedirectUri() {
+        return new Uri.Builder()
+                .scheme(getString(R.string.com_spotify_sdk_redirect_scheme))
+                .authority(getString(R.string.com_spotify_sdk_redirect_host))
+                .build();
+    }
+
+    public void addImage(List<SpotifyListPOJO.Item> items) {
+
+    }
+}
